@@ -270,8 +270,8 @@ function showPasswordRecovery(){
 }
 async function initializeAuth(){
  if(!validateCloudConfig()) return;
- const recoveryHash = /(?:^|[&#])type=recovery(?:&|$)/.test(location.hash);
- if(recoveryHash) showPasswordRecovery();
+
+ // Listen for password-recovery events before processing the callback.
  sb.auth.onAuthStateChange((event,session)=>{
    if(event === "PASSWORD_RECOVERY"){
      showPasswordRecovery();
@@ -284,11 +284,33 @@ async function initializeAuth(){
      $("#appShell").hidden=true;$("#authGate").hidden=false;
    }
  });
+
+ // Supabase PKCE recovery links may return a one-time ?code= query parameter.
+ const params = new URLSearchParams(location.search);
+ const code = params.get("code");
+ let exchangeError = null;
+ if(code){
+   const {error} = await sb.auth.exchangeCodeForSession(code);
+   exchangeError = error;
+   params.delete("code");
+   const remaining = params.toString();
+   history.replaceState({}, document.title,
+     location.pathname + (remaining ? "?" + remaining : "") + location.hash);
+ }
+
+ const recoveryHash = /(?:^|[&#])type=recovery(?:&|$)/.test(location.hash);
  const {data:{session},error}=await sb.auth.getSession();
+ if(exchangeError){
+   authMessage("재설정 링크 인증에 실패했습니다. 새 재설정 이메일을 요청하세요. ("+exchangeError.message+")");
+   return;
+ }
  if(error){authMessage(error.message);return}
- if(recoveryHash){
-   showPasswordRecovery();
-   if(!session?.user) authMessage("재설정 링크가 만료되었거나 유효하지 않습니다. 새 재설정 이메일을 요청하세요.");
+ if(recoveryHash || code){
+   if(session?.user){
+     showPasswordRecovery();
+   }else{
+     authMessage("재설정 링크가 만료되었거나 유효하지 않습니다. 새 재설정 이메일을 요청하세요.");
+   }
  } else if(session?.user) await loadUserWorkspace(session.user);
 }
 $("#saveNewPasswordBtn").addEventListener("click",async()=>{
