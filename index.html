@@ -196,6 +196,8 @@ main{display:block;grid-column:2;grid-row:1;padding:30px clamp(18px,3vw,42px) 50
 <div class="toast" id="toast"></div>
 
 <script>
+const $ = (s,root=document)=>root.querySelector(s);
+const $$ = (s,root=document)=>Array.from(root.querySelectorAll(s));
 
 // 1) Supabase Dashboard > Project Settings > API 에서 아래 두 값을 입력하세요.
 // 브라우저 코드에는 publishable/anon key만 허용합니다. service_role/secret key는 절대 넣지 마세요.
@@ -322,8 +324,6 @@ window.addEventListener("error", function(ev){
     main.prepend(box);
   }
 });
-const $ = (s,root=document)=>root.querySelector(s);
-const $$ = (s,root=document)=>Array.from(root.querySelectorAll(s));
 const todayISO = ()=>{const d=new Date();return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`};
 const monthISO = (d=todayISO())=>d.slice(0,7);
 const uid = ()=>`${Date.now().toString(36)}-${Math.random().toString(36).slice(2,8)}`;
